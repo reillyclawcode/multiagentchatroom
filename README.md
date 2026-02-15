@@ -1,50 +1,53 @@
 # Multi-Agent Chatroom
 
-A public playground where two handcrafted AI personas (Nova the optimistic futurist and Quill the grounded systems thinker) debate any topic you throw at them. The conversation now streams from Anthropic’s Claude models in real time.
+A public playground where two handcrafted AI personas (Nova the optimistic futurist and Quill the grounded systems thinker) debate any topic you throw at them. The conversation streams live from a configurable LLM provider (Anthropic or OpenAI).
 
 https://github.com/reillyclawcode/multiagentchatroom
 
 ## Features
 
 - **Next.js 15 + Tailwind UI** with color-coded chat bubbles.
-- **Anthropic-powered serverless endpoint** that alternates between agent profiles and streams responses via Server-Sent Events.
-- **Client-side stream reader** so you watch the transcript fill in live.
-- **Persona configs** in `src/lib/agents.ts` (names, roles, tones, bubble colors). Swap in your own agents anytime.
+- **Serverless simulation endpoint** (`/api/simulate`) that alternates between agent profiles and streams responses to the browser.
+- **Anthropic or OpenAI support** — set whichever API key you have and the app uses that model (Claude 3.5 Sonnet or GPT-4o Mini by default).
+- **Persona configs** in `src/lib/agents.ts` so you can change voice, tone, or add more agents.
 
 ## Local development
 
 ```bash
 npm install
+cp .env.example .env.local     # or set env vars manually
 npm run dev
 ```
 
-Create a `.env.local` file with your Anthropic key:
+Set one (or both) of the following:
 
 ```
+OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_MODEL=gpt-4o-mini        # optional override
 ```
 
-Then visit <http://localhost:3000>, enter a topic, and watch Nova and Quill respond.
+Then visit <http://localhost:3000>, enter a topic, and watch Nova + Quill respond in real time.
 
 ## Deployment (Vercel recommended)
 
-1. Push this repo to GitHub (done).
-2. Import it into Vercel → supply `ANTHROPIC_API_KEY` in **Settings → Environment Variables**.
-3. Vercel builds the Next.js app, hosts both the static UI and the `/api/simulate` stream endpoint, and keeps your key private.
+1. Import the repo into Vercel.
+2. In **Settings → Environment Variables**, add `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` (or both). Scope: Production + Preview.
+3. Deploy — Vercel hosts both the static UI and the `/api/simulate` serverless function while keeping your keys private.
 
-> GitHub Pages is fine for the static build, but real LLM calls require a server runtime (Vercel/Netlify/AWS/etc.) so the API key stays hidden.
+GitHub Pages builds still work (static export), but without API keys there’s no live simulation.
 
 ## How the simulation works
 
-- `src/app/api/simulate/route.ts` iterates through each turn, calling Anthropic with persona-specific instructions and streaming each reply as SSE.
-- `src/app/page.tsx` consumes the event stream, appending new messages as soon as they arrive.
-- `src/lib/agents.ts` defines personas, tonal guidelines, and bubble colors.
+- `src/app/api/simulate/route.ts` iterates through each turn, calling the configured LLM with persona-specific instructions and streaming each reply via SSE.
+- `src/app/page.tsx` consumes the stream and renders messages as soon as they arrive.
+- `src/lib/agents.ts` defines names, roles, tonal guidance, and bubble colors.
 
 ## Extending the playground
 
-- Add more agents or let visitors pick teams.
-- Swap Anthropic for another provider by editing the API route.
-- Persist transcripts to a database or pin them to your blog.
-- Add WebSocket support if you want multi-user live viewing.
+- Add more agents or let visitors pick their own personas.
+- Swap the LLM provider (Azure OpenAI, local models, etc.) by editing the API route.
+- Persist transcripts or auto-publish highlight reels to your blog.
+- Add websockets so multiple viewers can watch the same debate live.
 
 PRs and ideas welcome.
