@@ -2,39 +2,28 @@
 
 import { FormEvent, useCallback, useState } from "react";
 import type { ConversationMessage } from "@/lib/generator";
+import { generateTurn } from "@/lib/generator";
 
 export default function Home() {
   const [topic, setTopic] = useState("How should society steer frontier AI?");
   const [turns, setTurns] = useState(8);
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const runSimulation = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch("/api/simulate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ topic, turns })
-        });
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
-        if (!response.ok) {
-          throw new Error("Could not run the simulation. Try again.");
-        }
-
-        const data = await response.json();
-        setMessages(data.messages ?? []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unexpected error");
-      } finally {
-        setLoading(false);
+      const totalTurns = Math.min(Math.max(4, turns), 20);
+      const transcript: ConversationMessage[] = [];
+      for (let i = 0; i < totalTurns; i += 1) {
+        const message = generateTurn(i, topic, transcript);
+        transcript.push(message);
       }
+      setMessages(transcript);
+      setLoading(false);
     },
     [topic, turns]
   );
@@ -51,9 +40,9 @@ export default function Home() {
           </h1>
           <p className="max-w-3xl text-base text-slate-300">
             Nova (optimistic futurist) and Quill (grounded systems thinker) take
-            turns reacting to your prompt. No external APIs required—the replies
-            come from handcrafted personas, so you can fork this repo and swap in
-            real LLM calls when you’re ready.
+            turns reacting to your prompt. Everything runs locally so you can
+            fork this repo, add streaming, or swap in real LLM calls for the
+            personas.
           </p>
         </header>
 
@@ -85,18 +74,12 @@ export default function Home() {
             />
           </label>
 
-          {error && (
-            <p className="rounded-xl border border-red-400/40 bg-red-400/10 px-4 py-2 text-sm text-red-200">
-              {error}
-            </p>
-          )}
-
           <button
             type="submit"
             disabled={loading}
             className="inline-flex items-center justify-center rounded-xl bg-sky-400 px-5 py-3 text-base font-semibold text-slate-950 transition hover:bg-sky-300 disabled:cursor-wait disabled:bg-sky-700/50"
           >
-            {loading ? "Simulating…" : "Run conversation"}
+            {loading ? "Generating…" : "Run conversation"}
           </button>
         </form>
 
